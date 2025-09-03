@@ -1,0 +1,131 @@
+# config_eg.yaml config file for exclusive group bids for electrolyser
+
+# Simulation parameters
+simulation:
+  start_date: '2022-08-01'
+  end_date: '2022-08-31'
+  planning_horizon: 5 
+  implementation_period: 1 # day ahead market clearing 
+  market_input_file: 'scaled_data_NL4.xlsx'
+  output_dir: './electrolyzer_results_eg_cvar_95_0.05_August_re_zero' 
+  random_seed: 42
+
+# Electrolyzer Plant General Parameters
+electrolyzer_plant:
+  opportunity_cost_mwh_shortfall: 158.0 # used only if shortfall penalty is enabled in the thesis it was not used.
+  target_hydrogen_per_day: 19000 # kg, 80% of the max target and can produce more if profitable
+  target_avg_h2_per_day_in_window: 19000 # kg
+  baseload_mw: 0.0 # additional baseload can be added this is not considered during optimisation these are just added at the end
+
+hydrogen_price:
+  mode: constant # Can be 'constant' or 'dynamic' (dynamic not yet implemented)
+  value_eur_per_kg: 8.0 # The sale price of hydrogen, enabling profit maximisation
+
+
+# Time-of-Use (TOU) Peak Demand Charge Tariff
+time_of_use_tariff:
+  enabled: true # Set to true to activate the TOU incentive in the objective
+  rate_eur_per_kw_month: 7.38 # ACM tariff rate for high voltage customers
+
+# Objective Function, Risk, and Hydrogen Price
+objective_tuning:
+  enable_production_shortfall_penalty: false # Opportunity cost for not meeting hydrogen production target (per kg)
+  h2_opportunity_cost_per_kg: 8.0 # Example value, adjust as needed this was not used during thesis
+
+# Exclusive Group Bid (EG) Parameters
+exclusive_group_bids:
+  num_profiles_to_generate: 10 # number of profiles to generate
+  profile_pricing_strategy: "ranked_tiers_conditional_opportunity_cost"
+  tier1_profile_count: 3
+  tier1_price_factor: 1.0
+  tier2_profile_count: 4
+  tier2_price_factor: 0.9
+  tier3_price_factor: 0.7
+  opportunity_cost_proximity_threshold_percent: 15.0
+  absolute_min_bid_price: 0.0
+  absolute_max_bid_price: 4000.0
+
+risk_management:
+  cvar_alpha: 0.95 # confidence level for CVaR
+  cvar_weight: 0.05 # weight for CVaR in the objective
+
+# Forecast parameters 
+forecast:
+  model_type: 'prophet'
+  training_days: 90
+  model_path: './models_eg_electrolyzer/'
+  retrain: true
+  target_variable: 'Price'
+  feature_sets: ['hour', 'day_of_week', 'month', 'price_lags', 'price_stats', 'load', 'solar_wind']
+  prophet:
+    changepoint_prior_scale: 0.05
+    seasonality_prior_scale: 10.0
+    holidays_prior_scale: 10.0
+    daily_seasonality: true
+    weekly_seasonality: true
+    yearly_seasonality: 'auto'
+    seasonality_mode: 'multiplicative'
+    interval_width: 0.95
+    mcmc_samples: 0
+    country_code: 'NL'
+    floor: -500.0
+    cap: 4000.0
+  cv:
+    enabled: true
+    initial: '30 days'
+    period: '7 days'
+    horizon: '7 days'
+    parallel: 'processes'
+
+# Scenario generation parameters
+scenario_generation:
+  num_scenarios: 500
+  num_reduced: 10
+  distribution: 'levy_stable'
+  base_scale_factor: 0.076
+  uncertainty_growth_rate: 0.5
+  alpha: 1.31
+  beta: 0.16
+  correlation: true
+  scenario_realism:
+    enable_jump_control: true
+    max_hourly_jump_eur: 300.0
+    jump_smoothing_factor: 0.5
+
+# Solver options
+solver:
+  name: 'gurobi'
+  threads: 0
+  options:
+    #MIPGap: 0.02
+    TimeLimit: 1200
+
+# Re-dispatch parameters
+redispatch:
+  trigger_tolerance_percent: 0.00
+  unused_energy_penalty_factor: 1e9
+
+# SYNTHETIC DATA you can make your own synthetic prices for simulations here is backtesting is not needed 
+synthetic_data:
+  enabled: false       # Set to true to bypass the ML forecaster
+
+  # Baseline, Seasonality, and Trend
+  mu: 65.0            # Long-run mean price (€/MWh)
+  A: 30.0             # Amplitude of the daily sine wave (€/MWh)
+  beta: 0.0           # Linear trend in price (€/MWh per hour)
+
+  # Noise and Autocorrelation
+  sigma: 40.0         # Standard deviation of high-frequency noise
+  phi: 0.75           # Autocorrelation factor (0=no memory, 0.8=strong memory)
+
+  # Price Spikes
+  p_pos: 0.02         # Probability of a positive (high) price spike
+  S_pos: 300.0        # Average size of the positive spike
+  p_neg: 0.01         # Probability of a negative price spike
+  S_neg: 100.0        # Average depth of the negative spike
+
+  # Forecast Accuracy
+  sigma_f: 15.0       # **Controls forecast accuracy**. Higher value = less accurate forecast.
+
+  # Reproducibility
+  seed: 42
