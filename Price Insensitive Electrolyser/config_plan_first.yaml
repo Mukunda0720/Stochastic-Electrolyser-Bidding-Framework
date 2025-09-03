@@ -1,0 +1,79 @@
+# config_plan_first.yaml for price insensitive strategy
+
+simulation:
+  start_date: '2022-08-01'
+  end_date: '2022-08-31' 
+  planning_horizon: 5    
+  implementation_period: 1 
+  market_input_file: 'scaled_data_NL4.xlsx'
+ 
+  output_dir: './electrolyzer_results_august_2022_po/'
+  random_seed: 42
+
+# Electrolyzer Plant General Parameters
+electrolyzer_plant:
+  target_hydrogen_per_day: 23760 # kg
+
+  
+  baseload_mw: 0.0
+
+# Bidding strategy parameters
+# For this strategy, we create a physical plan and then submit a single
+# bid at a very high price to ensure it gets accepted by the market.
+bid_strategy:
+  max_blocks_per_hour: 1
+  min_bid_qty_mw: 0.0
+
+# Solver options
+solver:
+  name: 'gurobi'
+  threads: 0 
+  options:
+
+    MIPGap: 0.00
+
+    TimeLimit: 1200
+
+# --- NEW: Economic parameters for post-simulation analysis ---
+# These sections are kept for calculating economic indicators at the end of the simulation.
+# They are NOT used in the deterministic planner's objective function but ensure
+# that the final reports from both strategies are comparable.
+
+time_of_use_tariff:
+  enabled: true
+  rate_eur_per_kw_month: 7.38
+
+hydrogen_price:
+  value_eur_per_kg: 8.0
+
+# --- SECTION NOT USED BY THE DETERMINISTIC PLANNER ---
+# The deterministic planner does not use forecasting models for price.
+# However, the 'cap' is used as the maximum bid price to ensure acceptance.
+forecast:
+  prophet:
+    cap: 4000.0
+
+# CONFIGURE SYNTHETIC DATA ---
+synthetic_data:
+  enabled: false       # Set to true to bypass reading the market_input_file
+
+  # Baseline, Seasonality, and Trend
+  mu: 65.0            # Long-run mean price (€/MWh)
+  A: 30.0             # Amplitude of the daily sine wave (€/MWh)
+  beta: 0.0           # Linear trend in price (€/MWh per hour)
+
+  # Noise and Autocorrelation
+  sigma: 40.0         # Standard deviation of high-frequency noise
+  phi: 0.75           # Autocorrelation factor (0=no memory, 0.8=strong memory)
+
+  # Price Spikes
+  p_pos: 0.02         # Probability of a positive (high) price spike
+  S_pos: 300.0        # Average size of the positive spike
+  p_neg: 0.01         # Probability of a negative price spike
+  S_neg: 100.0        # Average depth of the negative spike
+
+  # Forecast Accuracy (Not used by planner, but good to keep for consistency)
+  sigma_f: 15.0
+
+  # Reproducibility
+  seed: 42
