@@ -1,0 +1,62 @@
+# config_perfect_info.yaml perfect foresight configuration
+
+simulation:
+  start_date: '2022-08-01'
+  end_date: '2022-08-31'
+  market_input_file: 'scaled_data_NL4.xlsx'
+  output_dir: './electrolyzer_results_perfect_information_august_2022_re/'
+  random_seed: 42
+
+
+electrolyzer_plant:
+
+  target_hydrogen_per_day: 19000 # kg can produce more if profitable this is just baseline target.
+
+
+  baseload_mw: 0.0
+
+# --- Economic parameters for the objective function ---
+# In this perfect foresight model, these values directly influence the optimization
+# to find the most profitable schedule.
+
+time_of_use_tariff:
+  enabled: true
+  rate_eur_per_kw_month: 7.38
+
+hydrogen_price:
+  value_eur_per_kg: 8.0
+
+# Solver options
+solver:
+  name: 'gurobi'
+  threads: 0 
+  options:
+   
+    MIPGap: 0.05
+    
+    TimeLimit: 3600 
+
+# CONFIGURE SYNTHETIC DATA ---
+synthetic_data:
+  enabled: false      # Set to true to bypass reading the market_input_file
+
+  # Baseline, Seasonality, and Trend
+  mu: 65.0            # Long-run mean price (€/MWh)
+  A: 30.0             # Amplitude of the daily sine wave (€/MWh)
+  beta: 0.0           # Linear trend in price (€/MWh per hour)
+
+  # Noise and Autocorrelation
+  sigma: 40.0         # Standard deviation of high-frequency noise
+  phi: 0.75           # Autocorrelation factor (0=no memory, 0.8=strong memory)
+
+  # Price Spikes
+  p_pos: 0.02         # Probability of a positive (high) price spike
+  S_pos: 300.0        # Average size of the positive spike
+  p_neg: 0.01         # Probability of a negative price spike
+  S_neg: 100.0        # Average depth of the negative spike
+
+  # Forecast Accuracy (Not used by this planner, but kept for consistency)
+  sigma_f: 15.0
+
+  # Reproducibility
+  seed: 42
