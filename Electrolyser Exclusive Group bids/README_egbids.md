@@ -59,7 +59,7 @@ Below are the key files in the order they are used during a typical simulation r
 You will need Python 3.8 or newer. The required libraries can be installed via pip:
 
 ```sh
-pip install pandas numpy pyomo prophet scikit-learn pyyaml matplotlib joblib openpyxl scipy
+pip install pandas numpy pyomo prophet scikit-learn pyyaml matplotlib scipy
 ```
 
 ### B. Optimisation Solver
